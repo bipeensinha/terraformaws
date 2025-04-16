@@ -104,5 +104,5 @@ resource "aws_ebs_volume" "bipeen_ebs" {
 resource "aws_volume_attachment" "bipeen_attach" {
   device_name = "/dev/xvdf"
   instance_id = aws_instance.bipeen_instance.id
-  volume_id   =_
+  volume_id   = aws_ebs_volume.bipeen_ebs.id
 } */

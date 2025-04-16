@@ -1,0 +1,108 @@
+provider "aws" {
+  region = "us-east-1"
+}
+
+# 1. VPC
+resource "aws_vpc" "bipeen_vpc" {
+  cidr_block = "10.0.0.0/16"
+
+  tags = {
+    Name = "Bipeen-VPC"
+  }
+}
+
+# 2. Subnet
+resource "aws_subnet" "bipeen_subnet" {
+  vpc_id                  = aws_vpc.bipeen_vpc.id
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "us-east-1a"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "Bipeen-Subnet"
+  }
+}
+
+# 3. Internet Gateway
+resource "aws_internet_gateway" "bipeen_igw" {
+  vpc_id = aws_vpc.bipeen_vpc.id
+
+  tags = {
+    Name = "Bipeen-IGW"
+  }
+}
+
+# 4. Route Table
+resource "aws_route_table" "bipeen_rt" {
+  vpc_id = aws_vpc.bipeen_vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.bipeen_igw.id
+  }
+
+  tags = {
+    Name = "Bipeen-RouteTable"
+  }
+}
+
+# 5. Route Table Association
+resource "aws_route_table_association" "bipeen_assoc" {
+  subnet_id      = aws_subnet.bipeen_subnet.id
+  route_table_id = aws_route_table.bipeen_rt.id
+}
+
+# 6. Security Group (Allow SSH)
+resource "aws_security_group" "bipeen_sg" {
+  name        = "Bipeen-SG"
+  description = "Allow SSH access"
+  vpc_id      = aws_vpc.bipeen_vpc.id
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "Bipeen-SG"
+  }
+}
+
+# 7. EC2 Instance
+resource "aws_instance" "bipeen_instance" {
+  ami                    = "ami-07a6f770277670015" # Use a valid AMI ID
+  instance_type          = "t3.micro"
+  subnet_id              = aws_subnet.bipeen_subnet.id
+  vpc_security_group_ids = [aws_security_group.bipeen_sg.id]
+  key_name               = "ramesh12" # Make sure this key exists
+
+  tags = {
+    Name = "Bipeen-Instance"
+  }
+}
+
+/* # 8. EBS Volume
+resource "aws_ebs_volume" "bipeen_ebs" {
+  availability_zone = aws_instance.bipeen_instance.availability_zone
+  size              = 10
+
+  tags = {
+    Name = "Bipeen-EBS"
+  }
+}
+
+# 9. Attach EBS Volume to EC2
+resource "aws_volume_attachment" "bipeen_attach" {
+  device_name = "/dev/xvdf"
+  instance_id = aws_instance.bipeen_instance.id
+  volume_id   =_
+} */
